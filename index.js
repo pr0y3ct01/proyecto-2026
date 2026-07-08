@@ -1,5 +1,4 @@
 require("dotenv").config();
-
 const express = require("express");
 const OpenAI = require("openai");
 
@@ -13,15 +12,15 @@ const openai = new OpenAI({
 const PORT = process.env.PORT || 8080;
 
 const SYSTEM_PROMPT = `
-Eres Isabella Rojas ❤️, una asistente humana, cálida, espiritual y cercana que responde dudas por WhatsApp sobre el libro digital "Cuando Dios Habla".
+Eres Marisol Toledano, una asistente humana, cálida, servicial y amable que responde dudas por WhatsApp sobre un PLR de lectoescritura.
 
-Tu trabajo es responder dudas de forma NATURAL, BREVE y HUMANA, como si fueras una persona real atendiendo con cariño.
+Tu trabajo es responder dudas de forma NATURAL, BREVE y HUMANA, como si fueras una persona real atendiendo con cariño a mamás, papás o maestras interesadas en apoyar a los niños con lectura y escritura.
 
 IMPORTANTE:
 - Nunca suenes robótica.
 - Nunca respondas exactamente igual cada vez.
 - Varía ligeramente las palabras y estructura.
-- Mantén respuestas cálidas y naturales.
+- Mantén respuestas cálidas, claras y naturales.
 - No escribas demasiado.
 - Responde máximo en 1 o 2 párrafos cortos.
 
@@ -39,29 +38,34 @@ REGLAS:
 - NO seas agresiva vendiendo.
 - NO presiones.
 - NO inventes información.
+- NO seas grosera.
+- NO digas que el material es físico.
 - NO menciones correo electrónico.
-- NO digas que el libro es físico.
+- NO digas que se entrega antes del pago.
+- NO digas que se envía automáticamente sin comprobante.
+- NO confundas el producto con un servicio.
 
 INFORMACIÓN REAL:
-- El libro es DIGITAL en PDF.
-- El libro NO es físico.
-- El PDF YA fue enviado anteriormente por WhatsApp.
-- El usuario lo puede encontrar más arriba en esta misma conversación.
-- El libro está basado en la Biblia.
-- No pertenece a una religión específica.
-- No es exclusivamente católico.
-- Puede estudiarse con cualquier Biblia.
-- Las referencias de apoyo son:
-  - 70 MXN como gesto de gratitud
-  - 90 MXN para apoyar el proyecto
-  - 120 MXN para que este mensaje llegue a más personas
+- El producto es un PLR de lectoescritura.
+- Es un producto digital.
+- La entrega es mediante un enlace de Google Drive.
+- Todo el material viene en formato PDF.
+- El material NO es físico.
+- El cliente puede descargarlo e imprimirlo.
+- El precio es de 59 pesos.
+- Es venta directa, no donación.
+- Se acepta transferencia bancaria o depósito en efectivo en Oxxo.
+- La entrega se realiza cuando el cliente envía el comprobante de pago junto con la palabra "listo".
+- El material sirve para apoyar a niños de kínder y primaria.
+- El material contiene el Libro Mágico y también Juguemos a Leer.
+- No inventes cantidad exacta de hojas si no está confirmada.
 
 OBJETIVO:
-Después de resolver la duda de forma amable y humana, dirige suavemente a la persona al apoyo del proyecto espiritual mediante:
+Después de resolver la duda de forma amable y humana, dirige suavemente a la persona a realizar su compra mediante:
 - transferencia bancaria
-- depósito en Oxxo
+- depósito en efectivo en Oxxo
 
-Haz que el cierre se sienta natural, amable y espiritual, nunca como presión de venta.
+Haz que el cierre se sienta natural, amable y claro, nunca como presión de venta.
 `;
 
 function normalizarTexto(texto) {
@@ -80,12 +84,12 @@ function limpiarRespuesta(texto) {
   texto = String(texto || "").trim();
 
   texto = texto
-    .replace(/^¡?\s*hola\s*[😊🙏❤️✨🌿,\.\!]*\s*/gi, "")
-    .replace(/^gracias por preguntar\s*[😊🙏❤️✨🌿,\.\!]*\s*/gi, "")
-    .replace(/^buenos días\s*[😊🙏❤️✨🌿,\.\!]*\s*/gi, "")
-    .replace(/^buenos dias\s*[😊🙏❤️✨🌿,\.\!]*\s*/gi, "")
-    .replace(/^buenas tardes\s*[😊🙏❤️✨🌿,\.\!]*\s*/gi, "")
-    .replace(/^buenas noches\s*[😊🙏❤️✨🌿,\.\!]*\s*/gi, "");
+    .replace(/^¡?\s*hola\s*[����❤️✨��,\.\!]*\s*/gi, "")
+    .replace(/^gracias por preguntar\s*[����❤️✨��,\.\!]*\s*/gi, "")
+    .replace(/^buenos días\s*[����❤️✨��,\.\!]*\s*/gi, "")
+    .replace(/^buenos dias\s*[����❤️✨��,\.\!]*\s*/gi, "")
+    .replace(/^buenas tardes\s*[����❤️✨��,\.\!]*\s*/gi, "")
+    .replace(/^buenas noches\s*[����❤️✨��,\.\!]*\s*/gi, "");
 
   texto = texto
     .replace(/¿[^?]*(quieres|te interesa|te gustaría|te gustaria|te cuento|te explico|te ayudo|puedo ayudarte|hay algo más|hay algo mas|te parece|te comparto|te paso)[^?]*\?/gi, "")
@@ -98,17 +102,17 @@ function limpiarRespuesta(texto) {
 
 function cierrePago() {
   const cierres = [
-    `💌 Puedes apoyar este proyecto espiritual por transferencia bancaria o depósito en Oxxo ✨
+    `El material tiene un costo de $59 pesos. Puedes pagar por transferencia o depósito en Oxxo.
 
-¿Cuál método prefieres? 🙏`,
+En cuanto envíes tu comprobante junto con la palabra "listo", te comparto el enlace de Google Drive para descargarlo.`,
 
-    `💌 Si deseas apoyar este proyecto espiritual, puedes hacerlo por transferencia bancaria o depósito en Oxxo ✨
+    `El costo es de $59 pesos y la entrega es digital por enlace de Google Drive.
 
-¿Qué método prefieres? 🙏`,
+Puedes realizar tu pago por transferencia o depósito en Oxxo. Al enviarme el comprobante con la palabra "listo", te mando el acceso al material.`,
 
-    `💌 Para apoyar este proyecto espiritual puedes elegir transferencia bancaria o depósito en Oxxo ✨
+    `Para adquirirlo, el precio es de $59 pesos. Aceptamos transferencia y depósito en efectivo en Oxxo.
 
-¿Cuál opción prefieres? 🙏`,
+Cuando mandes tu comprobante junto con la palabra "listo", te envío el enlace de descarga por Google Drive.`,
   ];
 
   return elegirAleatoria(cierres);
@@ -128,102 +132,128 @@ ${cierrePago()}`;
 
 function respuestaDirecta(textoNormalizado) {
   if (
-    textoNormalizado.includes("catolico") ||
-    textoNormalizado.includes("catolica") ||
-    textoNormalizado.includes("religion") ||
-    textoNormalizado.includes("religioso") ||
-    textoNormalizado.includes("cristiano") ||
-    textoNormalizado.includes("cristiana")
-  ) {
-    const respuestasReligion = [
-      `No es un libro católico como tal, ni pertenece a una religión específica 🌿
-
-Es una guía basada en la Biblia que puedes estudiar con cualquier Biblia que tengas en casa.`,
-
-      `No pertenece a una religión en específico 😊
-
-Es un material basado en la Biblia, pensado para acompañarte en tu vida espiritual de una forma sencilla y cercana.`,
-
-      `Es una guía bíblica, no un libro religioso de una denominación específica 🌿
-
-Puedes estudiarlo con la Biblia que tengas en casa, sin importar tu tradición religiosa.`,
-    ];
-
-    return agregarCierre(elegirAleatoria(respuestasReligion));
-  }
-
-  if (
-    textoNormalizado.includes("envio") ||
-    textoNormalizado.includes("enviar") ||
-    textoNormalizado.includes("entrega") ||
-    textoNormalizado.includes("fisico") ||
-    textoNormalizado.includes("pdf") ||
-    textoNormalizado.includes("digital") ||
-    textoNormalizado.includes("descargar") ||
-    textoNormalizado.includes("recibir") ||
-    textoNormalizado.includes("recibo") ||
-    textoNormalizado.includes("archivo") ||
-    textoNormalizado.includes("entrego") ||
-    textoNormalizado.includes("llega")
-  ) {
-    const respuestasEnvio = [
-      `El libro es completamente digital 😊
-
-El PDF ya fue enviado anteriormente aquí mismo en WhatsApp, así que solo necesitas abrirlo o descargarlo desde esta conversación 🌿`,
-
-      `No es un libro físico 🙏
-
-Es un material digital en PDF que ya te compartimos anteriormente en esta misma conversación de WhatsApp para que puedas leerlo cuando quieras ✨`,
-
-      `El material ya fue enviado por WhatsApp 😊
-
-Lo encuentras más arriba en esta conversación. Solo necesitas descargar el PDF en tu celular o computadora 🌿`,
-
-      `La entrega es digital 😊
-
-El PDF ya está enviado más arriba en este mismo chat de WhatsApp. No llega nada físico ni se manda por correo; solo debes descargarlo desde aquí mismo 🌿`,
-    ];
-
-    return agregarCierre(elegirAleatoria(respuestasEnvio));
-  }
-
-  if (
     textoNormalizado.includes("cuanto") ||
     textoNormalizado.includes("cuesta") ||
     textoNormalizado.includes("precio") ||
     textoNormalizado.includes("costo") ||
     textoNormalizado.includes("vale") ||
-    textoNormalizado.includes("apoyo") ||
-    textoNormalizado.includes("apoyar") ||
-    textoNormalizado.includes("aportacion") ||
-    textoNormalizado.includes("donacion") ||
     textoNormalizado.includes("pagar") ||
     textoNormalizado.includes("pago")
   ) {
-    const respuestasPago = [
-      `El libro se comparte como una bendición 🙏
+    const respuestasPrecio = [
+      `El PLR de lectoescritura tiene un costo de $59 pesos. Es un material digital en PDF, listo para descargar, imprimir y trabajar con los niños.`,
 
-Si nace en tu corazón apoyar este proyecto espiritual, las referencias son:
-🌿 70 MXN como gesto de gratitud
-🌿 90 MXN para apoyar el proyecto
-🌿 120 MXN para que este mensaje llegue a más personas`,
+      `El precio del material completo es de $59 pesos. La entrega se realiza de forma digital por enlace de Google Drive, después de enviar el comprobante de pago.`,
 
-      `El material ya fue compartido con mucho cariño 😊
-
-Para apoyar el proyecto, puedes elegir una de estas referencias:
-🌿 70 MXN como gesto de gratitud
-🌿 90 MXN para apoyar el proyecto
-🌿 120 MXN para ayudar a que llegue a más personas`,
-
-      `Este proyecto se sostiene con el apoyo de las personas que reciben el material 🙏
-
-Puedes apoyar con:
-🌿 70 MXN como gesto de gratitud
-🌿 90 MXN para apoyar directamente el proyecto
-🌿 120 MXN para que este mensaje llegue a más personas`,
+      `Tiene un costo total de $59 pesos. Todo se entrega en PDF mediante un enlace de Google Drive para que puedas descargarlo e imprimirlo.`,
     ];
 
-    return agregarCierre(elegirAleatoria(respuestasPago));
+    return agregarCierre(elegirAleatoria(respuestasPrecio));
+  }
+
+  if (
+    textoNormalizado.includes("fisico") ||
+    textoNormalizado.includes("impreso") ||
+    textoNormalizado.includes("envio") ||
+    textoNormalizado.includes("enviar") ||
+    textoNormalizado.includes("entrega") ||
+    textoNormalizado.includes("recibir") ||
+    textoNormalizado.includes("recibo") ||
+    textoNormalizado.includes("digital") ||
+    textoNormalizado.includes("pdf") ||
+    textoNormalizado.includes("drive") ||
+    textoNormalizado.includes("descargar") ||
+    textoNormalizado.includes("archivo") ||
+    textoNormalizado.includes("llega")
+  ) {
+    const respuestasEntrega = [
+      `El material no es físico, es completamente digital. Se entrega en formato PDF mediante un enlace de Google Drive para que puedas descargarlo e imprimirlo.`,
+
+      `La entrega es digital por Google Drive. Todo viene en PDF, así que puedes guardarlo en tu celular o computadora e imprimir las hojas que necesites.`,
+
+      `No se envía material impreso. Es un producto digital en PDF y se comparte por medio de un enlace de Google Drive después de confirmar el pago.`,
+    ];
+
+    return agregarCierre(elegirAleatoria(respuestasEntrega));
+  }
+
+  if (
+    textoNormalizado.includes("kinder") ||
+    textoNormalizado.includes("preescolar") ||
+    textoNormalizado.includes("primaria") ||
+    textoNormalizado.includes("niños") ||
+    textoNormalizado.includes("ninos") ||
+    textoNormalizado.includes("edad") ||
+    textoNormalizado.includes("grado") ||
+    textoNormalizado.includes("sirve")
+  ) {
+    const respuestasEdades = [
+      `Sí, el material sirve para apoyar a niños de kínder y primaria en el proceso de lectura y escritura.`,
+
+      `Sí, está pensado para reforzar lectoescritura en niños de kínder y primaria, ya sea en casa o como apoyo escolar.`,
+
+      `Claro, puede utilizarse con niños de kínder y primaria que están iniciando o reforzando lectura y escritura.`,
+    ];
+
+    return agregarCierre(elegirAleatoria(respuestasEdades));
+  }
+
+  if (
+    textoNormalizado.includes("hojas") ||
+    textoNormalizado.includes("paginas") ||
+    textoNormalizado.includes("páginas") ||
+    textoNormalizado.includes("cuantas") ||
+    textoNormalizado.includes("cantidad") ||
+    textoNormalizado.includes("incluye") ||
+    textoNormalizado.includes("contiene") ||
+    textoNormalizado.includes("trae")
+  ) {
+    const respuestasContenido = [
+      `Incluye material de lectoescritura en PDF, listo para imprimir y trabajar. Como el paquete trae varios archivos, la cantidad de hojas puede variar según lo que decidas imprimir.`,
+
+      `El paquete contiene varios materiales en PDF para lectura y escritura. Puedes imprimir solo las actividades que necesites o todo el material completo.`,
+
+      `Vienen varios archivos digitales en PDF enfocados en lectoescritura. La cantidad de hojas puede depender de los materiales que elijas imprimir.`,
+    ];
+
+    return agregarCierre(elegirAleatoria(respuestasContenido));
+  }
+
+  if (
+    textoNormalizado.includes("libro magico") ||
+    textoNormalizado.includes("libro mágico") ||
+    textoNormalizado.includes("juguemos a leer") ||
+    textoNormalizado.includes("magico") ||
+    textoNormalizado.includes("mágico")
+  ) {
+    const respuestasLibros = [
+      `Sí, el material contiene ambos libros: Libro Mágico y Juguemos a Leer.`,
+
+      `Sí los incluye. El paquete contiene tanto el Libro Mágico como Juguemos a Leer, además de material de apoyo para lectoescritura.`,
+
+      `Claro, contiene ambos: Libro Mágico y Juguemos a Leer, junto con otros recursos digitales para apoyar lectura y escritura.`,
+    ];
+
+    return agregarCierre(elegirAleatoria(respuestasLibros));
+  }
+
+  if (
+    textoNormalizado.includes("oxxo") ||
+    textoNormalizado.includes("deposito") ||
+    textoNormalizado.includes("depósito") ||
+    textoNormalizado.includes("transferencia") ||
+    textoNormalizado.includes("banco") ||
+    textoNormalizado.includes("tarjeta")
+  ) {
+    const respuestasMetodoPago = [
+      `Puedes realizar tu pago por transferencia bancaria o depósito en efectivo en Oxxo.`,
+
+      `Aceptamos transferencia y también depósito en Oxxo. Después de enviar el comprobante con la palabra "listo", se entrega el enlace del material.`,
+
+      `El pago puede hacerse por transferencia o depósito en efectivo en Oxxo. La entrega se realiza cuando envías el comprobante junto con la palabra "listo".`,
+    ];
+
+    return agregarCierre(elegirAleatoria(respuestasMetodoPago));
   }
 
   return null;
@@ -268,7 +298,6 @@ app.post("/mensaje", async (req, res) => {
     return res.json({ respuesta: respuestaFinal });
   } catch (error) {
     console.error("Error en /mensaje:", error);
-
     return res.json({ respuesta: cierrePago() });
   }
 });
